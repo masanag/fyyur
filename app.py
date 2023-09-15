@@ -12,6 +12,12 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from enums import *
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects import postgresql
+from datetime import datetime
+from flask_migrate import Migrate
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -20,41 +26,80 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI']
+migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venues'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(500))
+    seeking_talent = db.Column(db.Boolean, nullable=False)
+    seeking_description = db.Column(db.String())
+
+    shows = db.relationship('Show', backref='venue', lazy=True)
+    genres_enum = ENUM(*[genre.name for genre in GenreEnum], name='genres_enum')
+    genres = db.Column(postgresql.ARRAY(genres_enum), nullable=False)
+    state = db.Column(ENUM(*[state.name for state in StateEnum], name='state_enum'), nullable=False)
+
+    @property
+    def upcoming_shows(self):
+      return [show for show in self.shows if show.start_time > datetime.utcnow()]
+
+    @property
+    def past_shows(self):
+      return [show for show in self.shows if show.start_time < datetime.utcnow()]
+
+    @property
+    def upcoming_shows_count(self):
+      return len(self.upcoming_shows)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artists'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(500))
+    seeking_venue = db.Column(db.Boolean, nullable=False)
+    seeking_description = db.Column(db.String())
+    shows = db.relationship('Show', backref='artist', lazy=True)
+    genres_enum = ENUM(*[genre.name for genre in GenreEnum], name='genres_enum')
+    genres = db.Column(postgresql.ARRAY(genres_enum), nullable=False)
+    state = db.Column(ENUM(*[state.name for state in StateEnum], name='state_enum'), nullable=False)
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    @property
+    def upcoming_shows(self):
+      return [show for show in self.shows if show.start_time > datetime.utcnow()]
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+    @property
+    def past_shows(self):
+      return [show for show in self.shows if show.start_time < datetime.utcnow()]
+
+    @property
+    def upcoming_shows_count(self):
+      return len(self.upcoming_shows)
+
+class Show(db.Model):
+  __tablename__ = 'shows'
+  id = db.Column(db.Integer, primary_key=True)
+  artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'), nullable=False)
+  venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
+  start_time = db.Column(db.DateTime, nullable=False)
+
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -218,15 +263,42 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  # TODO: enable CSRF protection
+  form = VenueForm(request.form, meta={'csrf': False})
 
   # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+  if form.validate_on_submit():
+    try:
+      new_venue = Venue(
+        name = form.name.data,
+        city = form.city.data,
+        state = form.state.data,
+        address = form.address.data,
+        phone = form.phone.data,
+        image_link = form.image_link.data,
+        genres = form.genres.data,
+        facebook_link = form.facebook_link.data,
+        website = form.website_link.data,
+        seeking_talent = form.seeking_talent.data,
+        seeking_description = form.seeking_description.data,
+      )
+      db.session.add(new_venue)
+      db.session.commit()
+      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except Exception as e:
+      # TODO: on unsuccessful db insert, flash an error instead.
+      flash('An error occurred. Venue ' + form.name.data + ' could not be created. ' + str(e), 'danger')
+      db.session.rollback()
+    finally:
+      db.session.close()
+      return render_template('pages/home.html')
+
+    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+  else:
+    print(form.errors)
+    return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
