@@ -17,6 +17,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects import postgresql
 from datetime import datetime
 from flask_migrate import Migrate
+from collections import defaultdict
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -59,7 +60,7 @@ class Venue(db.Model):
       return [show for show in self.shows if show.start_time < datetime.utcnow()]
 
     @property
-    def upcoming_shows_count(self):
+    def num_upcoming_shows(self):
       return len(self.upcoming_shows)
 
 class Artist(db.Model):
@@ -127,29 +128,48 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
+  # TODO: revise
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+  # data=[{
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "venues": [{
+  #     "id": 1,
+  #     "name": "The Musical Hop",
+  #     "num_upcoming_shows": 0,
+  #   }, {
+  #     "id": 3,
+  #     "name": "Park Square Live Music & Coffee",
+  #     "num_upcoming_shows": 1,
+  #   }]
+  # }, {
+  #   "city": "New York",
+  #   "state": "NY",
+  #   "venues": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }]
+
+  venues = Venue.query.order_by(Venue.state, Venue.city).all()
+  grouped_venues = defaultdict(list)
+  for venue in venues:
+    key = (venue.city, venue.state)
+    grouped_venues[key].append({
+      "id": venue.id,
+      "name": venue.name,
+      "num_upcoming_shows": venue.num_upcoming_shows
+    })
+
+  data = []
+  for (city, state), venues_list in grouped_venues.items():
+    data.append({
+      "city": city,
+      "state": state,
+      "venues": venues_list
+    })
+
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
