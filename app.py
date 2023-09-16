@@ -2,7 +2,6 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-import json
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
@@ -123,7 +122,6 @@ def create_venue_submission():
       db.session.commit()
       flash('Venue ' + request.form['name'] + ' was successfully listed!')
     except Exception as e:
-      # TODO: on unsuccessful db insert, flash an error instead.
       flash('An error occurred. Venue ' + form.name.data + ' could not be created. ' + str(e), 'danger')
       db.session.rollback()
     finally:
@@ -133,9 +131,9 @@ def create_venue_submission():
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   else:
-    # TODO: flash validate errors
-    print(form.errors)
-    return render_template('pages/home.html')
+    for field, error in form.errors.items():
+      flash(f"Error in {getattr(form, field).label.text}: {error}")
+    return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -214,6 +212,7 @@ def edit_artist_submission(artist_id):
       flash('An error occurred. Venue ' + form.name.data + ' could not be updated. ' + str(e), 'danger')
     finally:
       db.session.close()
+      # TODO: validate error
   return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -263,6 +262,7 @@ def edit_venue_submission(venue_id):
       flash('An error occurred. Venue ' + form.name.data + ' could not be updated. ' + str(e), 'danger')
     finally:
       db.session.close()
+      # TODO: validate error
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
@@ -303,7 +303,11 @@ def create_artist_submission():
       print(form.errors)
     finally:
       db.session.close()
-  return render_template('pages/home.html')
+    return render_template('pages/home.html')
+  else:
+    for field, error in form.errors.items():
+      flash(f"Error in {getattr(form, field).label.text}: {error}")
+    return render_template('forms/new_artist.html', form=form)
 
 
 #  Shows
@@ -337,15 +341,14 @@ def create_show_submission():
       flash('Show was successfully listed!')
     except Exception as e:
       flash('An error occurred. Show could not be created. ' + str(e), 'danger')
-      # TODO: flash validate errors
-      # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
       db.session.rollback()
     finally:
       db.session.close()
     return render_template('pages/home.html')
-
-  # TODO: on unsuccessful db insert, flash an error instead.
-  return render_template('pages/home.html')
+  else:
+    for field, error in form.errors.items():
+      flash(f"Error in {getattr(form, field).label.text}: {error}")
+    return render_template('forms/new_show.html', form=form)
 
 @app.errorhandler(404)
 def not_found_error(error):

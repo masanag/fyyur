@@ -1,15 +1,17 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp
 from enums import *
 
 class ShowForm(Form):
-    artist_id = StringField(
-        'artist_id'
+    artist_id = IntegerField(
+        'artist_id',
+        validators=[DataRequired()]
     )
-    venue_id = StringField(
-        'venue_id'
+    venue_id = IntegerField(
+        'venue_id',
+        validators=[DataRequired()]
     )
     start_time = DateTimeField(
         'start_time',
@@ -33,6 +35,7 @@ class VenueForm(Form):
     )
     phone = StringField(
         'phone'
+        # TODO: validator:
     )
     image_link = StringField(
         'image_link'
@@ -43,6 +46,7 @@ class VenueForm(Form):
     )
     facebook_link = StringField(
         'facebook_link', validators=[URL()]
+        # TODO: validator
     )
     website_link = StringField(
         'website_link'
@@ -68,8 +72,11 @@ class ArtistForm(Form):
         choices=StateEnum.choices()
     )
     phone = StringField(
-        # TODO implement validation logic for state
-        'phone'
+        'phone',
+        validators=[
+            DataRequired(),
+            Regexp(r'^[0-9\-]*$', message="Phone number can only contain digits and dashes.")
+        ]
     )
     image_link = StringField(
         'image_link'
