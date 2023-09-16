@@ -315,6 +315,7 @@ def create_venue_submission():
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   else:
+    # TODO: flash validate errors
     print(form.errors)
     return render_template('pages/home.html')
 
@@ -527,11 +528,34 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  form = ArtistForm(request.form, meta={'csrf': False})
 
   # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+  if form.validate_on_submit():
+    try:
+      new_artist = Artist(
+        name = form.name.data,
+        city = form.city.data,
+        phone = form.phone.data,
+        image_link = form.image_link.data,
+        facebook_link = form.facebook_link.data,
+        website = form.website_link.data,
+        seeking_venue = form.seeking_venue.data,
+        seeking_description = form.seeking_description.data,
+        genres = form.genres.data,
+        state = form.state.data
+      )
+      db.session.add(new_artist)
+      db.session.commit()
+      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    except Exception as e:
+      flash('An error occurred. Venue ' + form.name.data + ' could not be created. ' + str(e), 'danger')
+      db.session.rollback()
+    finally:
+      db.session.close()
+      return render_template('pages/home.html')
+  # TODO: flash validate errors
+  print(form.errors)
   return render_template('pages/home.html')
 
 
