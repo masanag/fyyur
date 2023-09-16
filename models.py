@@ -4,8 +4,6 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects import postgresql
 from datetime import datetime
 
-# ... 他の必要なインポート ...
-
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#

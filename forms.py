@@ -1,8 +1,12 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField, ValidationError
 from wtforms.validators import DataRequired, AnyOf, URL, Regexp
 from enums import *
+
+def facebook_validator(form, field):
+    if 'www.facebook.com/' not in field.data:
+        raise ValidationError("URL must contain 'www.facebook.com/'")
 
 class ShowForm(Form):
     artist_id = IntegerField(
@@ -34,22 +38,24 @@ class VenueForm(Form):
         'address', validators=[DataRequired()]
     )
     phone = StringField(
-        'phone'
-        # TODO: validator:
+        'phone',
+        validators=[
+            DataRequired(),
+            Regexp(r'^[0-9\-*$]', message="Phone number can only contain digits and dashes.")
+        ]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[DataRequired(), URL()]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=GenreEnum.choices()
     )
     facebook_link = StringField(
-        'facebook_link', validators=[URL()]
-        # TODO: validator
-    )
+        'facebook_link', validators=[DataRequired(), URL(), facebook_validator]
+     )
     website_link = StringField(
-        'website_link'
+        'website_link', validators=[DataRequired(), URL()]
     )
 
     seeking_talent = BooleanField( 'seeking_talent' )
@@ -57,8 +63,6 @@ class VenueForm(Form):
     seeking_description = StringField(
         'seeking_description'
     )
-
-
 
 class ArtistForm(Form):
     name = StringField(
@@ -79,19 +83,18 @@ class ArtistForm(Form):
         ]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[DataRequired(), URL()]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=GenreEnum.choices()
      )
     facebook_link = StringField(
-        # TODO implement enum restriction
-        'facebook_link', validators=[URL()]
+        'facebook_link', validators=[DataRequired(), URL(), facebook_validator]
      )
 
     website_link = StringField(
-        'website_link'
+        'website_link', validators=[DataRequired(), URL()]
      )
 
     seeking_venue = BooleanField( 'seeking_venue' )
