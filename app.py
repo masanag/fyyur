@@ -10,7 +10,7 @@ from collections import defaultdict
 # Third-party libraries
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, jsonify
 from flask_moment import Moment
 
 # Custom modules
@@ -137,12 +137,26 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-  # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  try:
+    venue = Venue.query.get(venue_id)
+    if venue is None:
+      flash('Venue was not found!')
+      return jsonify({"error": "Venue not found", "redirect_url": url_for('index')}), 404
+    db.session.delete(venue)
+    db.session.commit()
+    flash(f'Venue {venue.name} was successfully deleted!')
+    return jsonify({"success": f"Venue {venue.name} successfully deleted","redirect_url": url_for('index')}, 200)
+  except Exception as e:
+    print(e)
+    flash(f'An error occurred. Venue {venue.name} could not be deleted.', 'danger')
+    db.session.rollback()
+    return jsonify({"error": "An error occurred while deleteing the venue", "redirect_url": url_for('show_venue', venue_id=venue_id)}), 500
+  finally:
+    db.session.close()
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
