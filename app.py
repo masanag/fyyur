@@ -1,21 +1,17 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+# TODO: Python標準ライブラリ、サードパーティのライブラリ、そして自作のモジュールという順番でインポートする
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_moment import Moment
 from extensions import db, migrate
 from models import Venue, Artist, Show
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
 from forms import *
 from enums import *
-from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.dialects import postgresql
-from datetime import datetime
 from collections import defaultdict
 
 #----------------------------------------------------------------------------#
@@ -122,17 +118,17 @@ def create_venue_submission():
       db.session.commit()
       flash('Venue ' + request.form['name'] + ' was successfully listed!')
     except Exception as e:
-      flash('An error occurred. Venue ' + form.name.data + ' could not be created. ' + str(e), 'danger')
+      flash('An error occurred. Venue ' + form.name.data + ' could not be created.', 'danger')
       db.session.rollback()
     finally:
       db.session.close()
-      return render_template('pages/home.html')
+      return redirect(url_for('venues'))
 
+  else:
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  else:
     for field, error in form.errors.items():
-      flash(f"Error in {getattr(form, field).label.text}: {error}")
+      flash(f"An error occurred. Venue {getattr(form, field).label.text} could not be listed. {error}", 'danger')
     return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -143,6 +139,61 @@ def delete_venue(venue_id):
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
   return None
+
+@app.route('/venues/<int:venue_id>/edit', methods=['GET'])
+def edit_venue(venue_id):
+  # TODO: enable CSRF protection
+  form = VenueForm(request.form, meta={'csrf': False})
+  venue = Venue.query.get(venue_id)
+  form.name.data = venue.name
+  form.city.data = venue.city
+  form.state.data = venue.state
+  form.address.data = venue.address
+  form.phone.data = venue.phone
+  form.image_link.data = venue.image_link
+  form.genres.data = venue.genres
+  form.facebook_link.data = venue.facebook_link
+  form.website_link.data = venue.website
+  form.seeking_talent.data = venue.seeking_talent
+  form.seeking_description.data = venue.seeking_description
+  return render_template('forms/edit_venue.html', form=form, venue=venue)
+
+@app.route('/venues/<int:venue_id>/edit', methods=['POST'])
+def edit_venue_submission(venue_id):
+  # TODO: enable CSRF protection
+  form = VenueForm(request.form, meta={'csrf': False})
+  venue = Venue.query.get(venue_id)
+  if not venue:
+    flash("Venue not found!", "error")
+    return redirect(url_for('index'))
+  if form.validate():
+    try:
+      venue.name = form.name.data
+      venue.city = form.city.data
+      venue.state = form.state.data
+      venue.address = form.address.data
+      venue.phone = form.phone.data
+      venue.image_link = form.image_link.data
+      venue.genres = form.genres.data
+      venue.facebook_link = form.facebook_link.data
+      venue.website = form.website_link.data
+      venue.seeking_talent = form.seeking_talent.data
+      venue.seeking_description = form.seeking_description.data
+      db.session.commit()
+      flash('Venue ' + request.form['name'] + ' was successfully updated!')
+
+    except Exception as e:
+      db.session.rollback()
+      flash('An error occurred. Venue ' + form.name.data + ' could not be updated.', 'danger')
+    finally:
+      db.session.close()
+      return redirect(url_for('show_venue', venue_id=venue_id))
+  else:
+    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    for field, error in form.errors.items():
+      flash(f"An error occurred. Venue {getattr(form, field).label.text} could not be updated. {error}", 'danger')
+    return render_template('forms/edit_venue.html', venue=venue, form=form)
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -205,65 +256,18 @@ def edit_artist_submission(artist_id):
       artist.genres = form.genres.data
       artist.state = form.state.data
       db.session.commit()
-      flash('Venue ' + request.form['name'] + ' was successfully updated!')
+      flash('Artist ' + request.form['name'] + ' was successfully updated!')
 
     except Exception as e:
       db.session.rollback()
-      flash('An error occurred. Venue ' + form.name.data + ' could not be updated. ' + str(e), 'danger')
+      flash('An error occurred. Artist ' + form.name.data + ' could not be updated.', 'danger')
     finally:
       db.session.close()
-      # TODO: validate error
-  return redirect(url_for('show_artist', artist_id=artist_id))
-
-@app.route('/venues/<int:venue_id>/edit', methods=['GET'])
-def edit_venue(venue_id):
-  # TODO: enable CSRF protection
-  form = VenueForm(request.form, meta={'csrf': False})
-  venue = Venue.query.get(venue_id)
-  form.name.data = venue.name
-  form.city.data = venue.city
-  form.state.data = venue.state
-  form.address.data = venue.address
-  form.phone.data = venue.phone
-  form.image_link.data = venue.image_link
-  form.genres.data = venue.genres
-  form.facebook_link.data = venue.facebook_link
-  form.website_link.data = venue.website
-  form.seeking_talent.data = venue.seeking_talent
-  form.seeking_description.data = venue.seeking_description
-  return render_template('forms/edit_venue.html', form=form, venue=venue)
-
-@app.route('/venues/<int:venue_id>/edit', methods=['POST'])
-def edit_venue_submission(venue_id):
-  # TODO: enable CSRF protection
-  form = VenueForm(request.form, meta={'csrf': False})
-  venue = Venue.query.get(venue_id)
-  if not venue:
-    flash("Venue not found!", "error")
-    return redirect(url_for('index'))
-  if form.validate():
-    try:
-      venue.name = form.name.data
-      venue.city = form.city.data
-      venue.state = form.state.data
-      venue.address = form.address.data
-      venue.phone = form.phone.data
-      venue.image_link = form.image_link.data
-      venue.genres = form.genres.data
-      venue.facebook_link = form.facebook_link.data
-      venue.website = form.website_link.data
-      venue.seeking_talent = form.seeking_talent.data
-      venue.seeking_description = form.seeking_description.data
-      db.session.commit()
-      flash('Venue ' + request.form['name'] + ' was successfully updated!')
-
-    except Exception as e:
-      db.session.rollback()
-      flash('An error occurred. Venue ' + form.name.data + ' could not be updated. ' + str(e), 'danger')
-    finally:
-      db.session.close()
-      # TODO: validate error
-  return redirect(url_for('show_venue', venue_id=venue_id))
+      return redirect(url_for('show_artist', artist_id=artist_id))
+  else:
+    for field, error in form.errors.items():
+      flash(f"An error occurred. Artist {getattr(form, field).label.text} could not be updated. {error}", 'danger')
+      return render_template('forms/edit_artist.html',artist=artist ,form=form)
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -297,13 +301,12 @@ def create_artist_submission():
       db.session.commit()
       flash('Artist ' + request.form['name'] + ' was successfully listed!')
     except Exception as e:
-      flash('An error occurred. Venue ' + form.name.data + ' could not be created. ' + str(e), 'danger')
+      flash('An error occurred. Venue ' + form.name.data + ' could not be created.', 'danger')
       db.session.rollback()
-      # TODO: flash validate errors
-      print(form.errors)
+      flash('An error occurred. Artist ' + form.name.data + ' could not be created.', 'danger')
     finally:
       db.session.close()
-    return render_template('pages/home.html')
+    return redirect(url_for('artists'))
   else:
     for field, error in form.errors.items():
       flash(f"Error in {getattr(form, field).label.text}: {error}")
@@ -340,11 +343,11 @@ def create_show_submission():
       db.session.commit()
       flash('Show was successfully listed!')
     except Exception as e:
-      flash('An error occurred. Show could not be created. ' + str(e), 'danger')
+      flash('An error occurred. Show could not be created.', 'danger')
       db.session.rollback()
     finally:
       db.session.close()
-    return render_template('pages/home.html')
+    return redirect(url_for('shows'))
   else:
     for field, error in form.errors.items():
       flash(f"Error in {getattr(form, field).label.text}: {error}")

@@ -41,7 +41,7 @@ class VenueForm(Form):
         'phone',
         validators=[
             DataRequired(),
-            Regexp(r'^[0-9\-*$]', message="Phone number can only contain digits and dashes.")
+            Regexp(r'^[0-9\-]*$', message="Phone number can only contain digits and dashes.")
         ]
     )
     image_link = StringField(
