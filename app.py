@@ -100,8 +100,7 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: enable CSRF protection
-  form = VenueForm(request.form, meta={'csrf': False})
+  form = VenueForm()
 
   # on successful db insert, flash success
   if form.validate_on_submit():
@@ -147,8 +146,7 @@ def delete_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-  # TODO: enable CSRF protection
-  form = VenueForm(request.form, meta={'csrf': False})
+  form = VenueForm()
   venue = Venue.query.get(venue_id)
   form.name.data = venue.name
   form.city.data = venue.city
@@ -165,8 +163,7 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  # TODO: enable CSRF protection
-  form = VenueForm(request.form, meta={'csrf': False})
+  form = VenueForm()
   venue = Venue.query.get(venue_id)
   if not venue:
     flash("Venue not found!", "error")
@@ -224,9 +221,7 @@ def show_artist(artist_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-  # TODO: improve csrf
-  # TODO: request.formが必要かどうか調べる
-  form = ArtistForm(request.form, meta={'csrf': False})
+  form = ArtistForm()
   artist = Artist.query.get(artist_id)
   form.name.data = artist.name
   form.city.data = artist.city
@@ -242,8 +237,7 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  # TODO: enable CSRF protection
-  form = ArtistForm(request.form, meta={'csrf': False})
+  form = ArtistForm()
   artist = Artist.query.get(artist_id)
   if not artist:
     flash("Artist not found!", "error")
@@ -285,7 +279,7 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   # called upon submitting the new artist listing form
-  form = ArtistForm(request.form, meta={'csrf': False})
+  form = ArtistForm()
 
   # on successful db insert, flash success
   if form.validate_on_submit():
@@ -336,7 +330,7 @@ def create_shows():
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
-  form = ShowForm(request.form, meta={'csrf': False})
+  form = ShowForm()
   if form.validate_on_submit():
     try:
       new_show = Show(
