@@ -200,6 +200,7 @@ def edit_venue_submission(venue_id):
       flash('Venue ' + request.form['name'] + ' was successfully updated!')
 
     except Exception as e:
+      print(e)
       db.session.rollback()
       flash('An error occurred. Venue ' + form.name.data + ' could not be updated.', 'danger')
     finally:
