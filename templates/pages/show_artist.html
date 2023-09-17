@@ -51,6 +51,22 @@ endblock %} {% block content %}
 </div>
 <section>
   <h2 class="monospace">
+    {{ venue_count }} Past Performance {% if venue_count == 1 %}Venue{% else
+    %}Venues{% endif %}
+  </h2>
+  <div class="row">
+    {%for venue in venues %}
+    <div class="col-sm-4">
+      <div class="tile tile-show">
+        <img src="{{ venue.image_link }}" alt="Show Venue Image" />
+        <h5><a href="/venues/{{ venue.id }}">{{ venue.name }}</a></h5>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<section>
+  <h2 class="monospace">
     {{ artist.upcoming_shows_count }} Upcoming {% if artist.upcoming_shows_count
     == 1 %}Show{% else %}Shows{% endif %}
   </h2>

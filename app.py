@@ -88,7 +88,8 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   venue = Venue.query.get(venue_id)
-  return render_template('pages/show_venue.html', venue=venue)
+  artists = db.session.query(Artist).join(Show).filter(Show.venue_id == venue_id).all()
+  return render_template('pages/show_venue.html', venue=venue, artists=artists, artist_count=len(artists))
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -229,7 +230,8 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   artist = Artist.query.get(artist_id)
-  return render_template('pages/show_artist.html', artist=artist)
+  venues = db.session.query(Venue).join(Show).filter(Show.artist_id == artist_id).all()
+  return render_template('pages/show_artist.html', artist=artist, venues=venues, venue_count=len(venues))
 
 #  Update
 #  ----------------------------------------------------------------

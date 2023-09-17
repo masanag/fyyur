@@ -78,6 +78,24 @@ block content %}
 </div>
 <section>
   <h2 class="monospace">
+    {{ artist_count }} {% if artist_count == 1 %}Artist{% else %}Artists{% endif
+    %} Who Have Performed Here
+  </h2>
+  <div class="row">
+    {%for artist in artists %}
+    <div class="col-sm-4">
+      <div class="tile tile-show">
+        <img src="{{ artist.image_link }}" alt="Show Artist Image" />
+        <h5>
+          <a href="/artists/{{ artist.id }}">{{ artist.name }}</a>
+        </h5>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<section>
+  <h2 class="monospace">
     {{ venue.upcoming_shows_count }} Upcoming {% if venue.upcoming_shows_count
     == 1 %}Show{% else %}Shows{% endif %}
   </h2>
