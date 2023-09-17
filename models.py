@@ -71,6 +71,10 @@ class Artist(db.Model):
     def upcoming_shows_count(self):
       return len(self.upcoming_shows)
 
+    @property
+    def past_shows_count(self):
+      return len(self.past_shows)
+
 class Show(db.Model):
   __tablename__ = 'shows'
   id = db.Column(db.Integer, primary_key=True)
