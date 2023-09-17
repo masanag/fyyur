@@ -1,18 +1,23 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-# TODO: Python標準ライブラリ、サードパーティのライブラリ、そして自作のモジュールという順番でインポートする
+
+# Standard libraries
+import logging
+from logging import Formatter, FileHandler
+from collections import defaultdict
+
+# Third-party libraries
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_moment import Moment
-from extensions import db, migrate
-from models import Venue, Artist, Show
-import logging
-from logging import Formatter, FileHandler
+
+# Custom modules
+from extensions import *
+from models import *
 from forms import *
 from enums import *
-from collections import defaultdict
 
 #----------------------------------------------------------------------------#
 # App Config.
